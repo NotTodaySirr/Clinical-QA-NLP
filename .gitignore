@@ -77,3 +77,5 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+.agent/
