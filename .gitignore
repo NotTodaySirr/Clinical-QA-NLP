@@ -79,3 +79,7 @@ Thumbs.db
 *.swo
 
 .agent/
+
+# Dataset
+backend/AI/data/*
+!backend/AI/data/.gitkeep

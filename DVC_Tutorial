@@ -1,0 +1,101 @@
+# 🚀 DVC (Data Version Control) Tutorial
+
+DVC acts just like Git, but for your large data files. Instead of storing massive CSVs in GitHub, DVC stores them in a cloud storage provider (like Google Drive, AWS S3, or a local network drive) and creates a tiny `.dvc` text file. You commit that tiny text file to Git instead.
+
+Here is a step-by-step guide on how to set up DVC for your **Clinical-QA-NLP** project.
+
+---
+
+## Part 1: Setting up DVC (You do this once)
+
+### 1. Install DVC
+First, you need to install DVC in your Python virtual environment. Depending on where you want to store your data (e.g., Google Drive, S3, Azure), you install a specific plugin. 
+
+For Google Drive:
+```powershell
+pip install "dvc[gdrive]"
+```
+*(If you want to use S3, use `pip install "dvc[s3]"`, etc.)*
+
+### 2. Initialize DVC
+Navigate to the root of your Git repository and initialize DVC. This creates a `.dvc/` hidden folder.
+```powershell
+cd C:\Users\84913\source\repos\SL\Clinical_QA_System\Clinical-QA-NLP
+dvc init
+git commit -m "Initialize DVC"
+```
+
+### 3. Configure Remote Storage
+Tell DVC where to actually upload the heavy data files. For example, if you create a folder in Google Drive, you can grab its folder ID from the URL (e.g., `https://drive.google.com/drive/folders/<YOUR_FOLDER_ID>`).
+```powershell
+dvc remote add -d myremote gdrive://<YOUR_FOLDER_ID>
+git add .dvc/config
+git commit -m "Configure DVC remote storage"
+```
+
+---
+
+## Part 2: Tracking Your Data
+
+Now that DVC is set up, let's track the `backend/AI/data` folder you just created.
+
+> [!IMPORTANT]
+> When you use `dvc add`, DVC will automatically add the target folder to your `.gitignore` so you don't accidentally commit the heavy files to Git.
+
+### 1. Add Data to DVC
+```powershell
+dvc add backend/AI/data
+```
+This command does two things:
+1. It adds `backend/AI/data` to `.gitignore`.
+2. It generates a tiny tracking file called `backend/AI/data.dvc`.
+
+### 2. Commit the tracking file to Git
+Commit the tiny `.dvc` file to Git. This tells your team "Here is the exact version of the data I am currently using."
+```powershell
+git add backend/AI/data.dvc backend/AI/.gitignore
+git commit -m "Track AI dataset using DVC"
+```
+
+### 3. Push the data to your cloud storage
+Upload the actual heavy data files to your Google Drive (or S3).
+```powershell
+dvc push
+```
+
+---
+
+## Part 3: Collaborator Workflow
+
+When a collaborator labels more data and wants to send it to you, this is the exact flow they follow:
+
+### How a collaborator sends you updated data:
+1. They add their newly labeled CSVs to the `backend/AI/data/raw/` folder on their computer.
+2. They tell DVC to track the updates:
+   ```powershell
+   dvc add backend/AI/data
+   ```
+3. They commit the updated `.dvc` tracking file to GitHub:
+   ```powershell
+   git add backend/AI/data.dvc
+   git commit -m "Add newly labeled data batch"
+   git push origin main
+   ```
+4. They push the actual heavy files to cloud storage:
+   ```powershell
+   dvc push
+   ```
+
+### How YOU download their updated data:
+When you want to train on their freshly labeled data, you just do this:
+
+1. Pull the newest pointer files from GitHub:
+   ```powershell
+   git pull origin main
+   ```
+2. Tell DVC to download the actual data files that match the new pointers:
+   ```powershell
+   dvc pull
+   ```
+
+And just like that, your `backend/AI/data` folder will instantly update to contain all their newest labeled data!
