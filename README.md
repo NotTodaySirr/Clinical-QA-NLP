@@ -40,7 +40,7 @@ A full-stack web application for Transformer-based Natural Language Processing, 
 
 You can run the backend using either **`uv`** (recommended) or traditional **`pip`**:
 
-#### Option A: Using `uv` (Fastest)
+#### Option A: Using `uv` (Recommended - Fastest)
 
 ```bash
 # Navigate to backend directory
@@ -54,9 +54,7 @@ uv pip install -r requirements.txt
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-> **Note on Windows PowerShell**: You can activate the environment using `.venv\Scripts\activate`.
-
----
+> **Note**: You can also use `uv sync` if managing dependencies via `pyproject.toml`.
 
 #### Option B: Using standard `pip`
 
@@ -89,9 +87,9 @@ The API will be live at:
 
 ### 2. Frontend Setup
 
-You can run the frontend using either **`pnpm`** (recommended) or **`npm`**:
+You can run the frontend using either **`pnpm`** (recommended) or standard **`npm`**:
 
-#### Option A: Using `pnpm` (Fast & Disk-Efficient)
+#### Option A: Using `pnpm` (Recommended - Fast & Disk-Efficient)
 
 ```bash
 # Navigate to frontend directory
@@ -104,9 +102,7 @@ pnpm install
 pnpm dev
 ```
 
----
-
-#### Option B: Using `npm`
+#### Option B: Using standard `npm`
 
 ```bash
 # Navigate to frontend directory
@@ -120,6 +116,36 @@ npm run dev
 ```
 
 The web application will be accessible at `http://localhost:5173`.
+
+---
+
+### 3. Dataset Setup
+
+#### Option A: Pull via DVC & DagsHub (Recommended)
+```bash
+# Install root dependencies (includes DVC and ML tools)
+# Using uv:
+uv venv && uv pip install -r requirements.txt
+# Or using pip:
+# python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt
+
+# Configure DagsHub credentials (one-time setup)
+dvc remote modify origin --local auth basic
+dvc remote modify origin --local user "YOUR_DAGSHUB_USERNAME"
+dvc remote modify origin --local password "YOUR_DAGSHUB_TOKEN"
+
+# Pull data tracked by DVC
+dvc pull -r origin
+```
+
+#### Option B: Fetch raw dataset directly via Python script
+```bash
+# Using uv:
+uv run python backend/AI/src/data_setup.py
+
+# Or using standard python:
+# python backend/AI/src/data_setup.py
+```
 
 
 ---
