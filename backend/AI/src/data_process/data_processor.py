@@ -1,4 +1,3 @@
-import re
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
@@ -11,30 +10,30 @@ model_name = 'dmis-lab/biobert-v1.1'
 
 class DataProcessor:
     """
-    Description: This class is used to process the raw dataset and prepare it for training.
-    Process: 
-        1. Clean the dataset
-        2. Preprocess the dataset
-        3. Stratified split the dataset
-        4. Return the dataset
+    Description: Loads a pre-cleaned CSV and prepares it for model training.
+    Process:
+        1. Load cleaned CSV from disk
+        2. Preprocess labels
+        3. Stratified split into train/val/test
+        4. Return PyTorch DataLoaders
     Input:
-        raw_dataframe: Pandas DataFrame with columns ['question', 'context', 'label_decision']
+        cleaned_csv_path: Path to the cleaned CSV produced by DataCleaner
         model_name: BioBERT tokeniser name
         max_len: Maximum sequence length
     Output:
-        Pytorch dataset
-    """ 
-    def __init__(self, raw_dataframe, model_name=model_name, max_len=512):
+        PyTorch DataLoaders
+    """
+    def __init__(self, cleaned_csv_path: str, model_name=model_name, max_len=512):
         """
-        Initialisation
+        Initialisation — loads the cleaned CSV from disk.
 
         Args:
-            raw_dataframe: Pandas DataFrame with columns ['question', 'context', 'label_decision']
+            cleaned_csv_path: Path to the cleaned CSV produced by DataCleaner
             model_name: BioBERT tokeniser name
             max_len: Maximum sequence length
         """
-        self.raw_df = raw_dataframe
-        self.processed_df = None
+        print(f"Loading cleaned data from {cleaned_csv_path}...")
+        self.processed_df = pd.read_csv(cleaned_csv_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.max_len = max_len
 
@@ -42,52 +41,6 @@ class DataProcessor:
         self.train_df = None
         self.val_df = None
         self.test_df = None
-        
-    def clean(self):
-        """
-        Description: Clean the dataset
-        Process: 
-            1. Copy the raw dataset
-            2. Drop rows with missing values in the target columns
-            3. Drop duplicate rows
-            4. Ensure question and context are strings
-        Input:
-            raw_dataframe: Pandas DataFrame with columns ['question', 'context', 'label_decision']
-        Output:
-            Cleaned DataFrame
-        """
-        df = self.raw_df[['question', 'context', 'label_decision']].copy()
-        
-        # Drop rows with missing values in the target columns
-        df.dropna(subset=['question', 'context', 'label_decision'], inplace=True)
-
-        # Drop duplicate rows
-        df.drop_duplicates(subset=['question', 'context'], inplace=True)
-
-        # Ensure question and context are strings
-        df['question'] = df['question'].astype(str)
-        df['context'] = df['context'].astype(str)
-
-        # Normalise unusual line terminators
-        df['question'] = df['question'].apply(self._normalize_text)
-        df['context'] = df['context'].apply(self._normalize_text)
-
-        self.processed_df = df
-        
-        print(f"Data cleaning complete. Remaining length: {len(self.processed_df)}")
-        
-    @staticmethod
-    def _normalize_text(text: str) -> str:
-        """
-        Collapse all unusual line terminators and whitespace into a single space.
-        Handles: CRLF (\\r\\n), bare CR (\\r), tab (\\t),
-                 Unicode Line Separator (\\u2028), Unicode Paragraph Separator (\\u2029).
-        """
-        # Replace all variant line endings / separators with a space
-        text = re.sub(r'\r\n|\r|\t|\u2028|\u2029', ' ', text)
-        # Collapse any run of whitespace (including multiple spaces) into one
-        text = re.sub(r' +', ' ', text)
-        return text.strip()
 
     def preprocess(self):
         """
