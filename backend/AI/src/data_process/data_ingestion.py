@@ -16,14 +16,31 @@ class MedicalQADataset(Dataset):
         Pytorch dataset
     """
     def __init__(self, dataframe, tokenizer, max_length=512):
+        """
+        Initialisation
+        """
         self.dataframe = dataframe.reset_index(drop=True)
         self.tokenizer = tokenizer
         self.max_length = max_length
         
     def __len__(self):
+        """
+        Returns the length of the dataset
+        """
         return len(self.dataframe)
     
     def __getitem__(self, idx):
+        """
+            Description: Get the item at the given index
+            Process:
+                1. Get the question, context, and label
+                2. Tokenise the question and context
+                3. Return the tokenised data
+            Input:
+                idx: Index of the item
+            Output:
+                Tokenised data
+        """
         question = str(self.dataframe.loc[idx, 'question'])
         context = str(self.dataframe.loc[idx, 'context'])
         label = self.dataframe.loc[idx, 'label_decision']

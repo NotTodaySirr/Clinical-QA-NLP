@@ -5,9 +5,33 @@ from torch.utils.data import DataLoader
 
 from .data_ingestion import MedicalQADataset
 
+# BioBERT tokeniser
 model_name = 'dmis-lab/biobert-v1.1'
-class DataProcessor: 
+
+class DataProcessor:
+    """
+    Description: This class is used to process the raw dataset and prepare it for training.
+    Process: 
+        1. Clean the dataset
+        2. Preprocess the dataset
+        3. Stratified split the dataset
+        4. Return the dataset
+    Input:
+        raw_dataframe: Pandas DataFrame with columns ['question', 'context', 'label_decision']
+        model_name: BioBERT tokeniser name
+        max_len: Maximum sequence length
+    Output:
+        Pytorch dataset
+    """ 
     def __init__(self, raw_dataframe, model_name=model_name, max_len=512):
+        """
+        Initialisation
+
+        Args:
+            raw_dataframe: Pandas DataFrame with columns ['question', 'context', 'label_decision']
+            model_name: BioBERT tokeniser name
+            max_len: Maximum sequence length
+        """
         self.raw_df = raw_dataframe
         self.processed_df = None
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -19,6 +43,18 @@ class DataProcessor:
         self.test_df = None
         
     def clean(self):
+        """
+        Description: Clean the dataset
+        Process: 
+            1. Copy the raw dataset
+            2. Drop rows with missing values in the target columns
+            3. Drop duplicate rows
+            4. Ensure question and context are strings
+        Input:
+            raw_dataframe: Pandas DataFrame with columns ['question', 'context', 'label_decision']
+        Output:
+            Cleaned DataFrame
+        """
         df = self.raw_df[['question', 'context', 'label_decision']].copy()
         
         # Drop rows with missing values in the target columns
@@ -36,6 +72,17 @@ class DataProcessor:
         print(f"Data cleaning complete. Remaining length: {len(self.processed_df)}")
         
     def preprocess(self):
+        """
+        Description: Preprocess the dataset
+        Process: 
+            1. Map label_decision to integers
+            2. Drop rows with missing values in the label_decision column
+            3. Ensure label_decision is integer
+        Input:
+            Cleaned DataFrame
+        Output:
+            Processed DataFrame
+        """ 
         if self.processed_df is None:
             raise ValueError("Missing cleaned data")
         
@@ -78,6 +125,16 @@ class DataProcessor:
         print(f"Test set: {len(self.test_df)} samples")
         
     def get_dataloader(self, batch_size = 8):
+        """
+        Description: Get the dataloader for the dataset
+        Process: 
+            1. Instantiate the PyTorch Datasets
+            2. Create DataLoaders for batching
+        Input:
+            batch_size: Batch size for the dataloader
+        Output:
+            DataLoaders for training, validation, and testing
+        """ 
         if self.train_df is None:
             raise ValueError("Missing stratified training data")
 
