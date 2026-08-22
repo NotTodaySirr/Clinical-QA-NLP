@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
@@ -67,10 +68,27 @@ class DataProcessor:
         df['question'] = df['question'].astype(str)
         df['context'] = df['context'].astype(str)
 
+        # Normalise unusual line terminators
+        df['question'] = df['question'].apply(self._normalize_text)
+        df['context'] = df['context'].apply(self._normalize_text)
+
         self.processed_df = df
         
         print(f"Data cleaning complete. Remaining length: {len(self.processed_df)}")
         
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        """
+        Collapse all unusual line terminators and whitespace into a single space.
+        Handles: CRLF (\\r\\n), bare CR (\\r), tab (\\t),
+                 Unicode Line Separator (\\u2028), Unicode Paragraph Separator (\\u2029).
+        """
+        # Replace all variant line endings / separators with a space
+        text = re.sub(r'\r\n|\r|\t|\u2028|\u2029', ' ', text)
+        # Collapse any run of whitespace (including multiple spaces) into one
+        text = re.sub(r' +', ' ', text)
+        return text.strip()
+
     def preprocess(self):
         """
         Description: Preprocess the dataset
