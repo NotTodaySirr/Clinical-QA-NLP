@@ -29,3 +29,14 @@ raw_path = os.path.join(raw_dir, 'pubmedqa_unlabeled_raw.csv')
 df.to_csv(raw_path, index=False)
 
 print(f"Raw data save to {raw_path}")
+
+# Download Labeled Dataset (Gold Standard)
+print("Download Labeled Dataset (Gold Standard) from HuggingFace")
+dataset_labeled = load_dataset('qiaojin/PubMedQA', 'pqa_labeled')
+
+df_labeled = pd.DataFrame(dataset_labeled['train'])
+
+labeled_path = os.path.join(raw_dir, 'pubmedqa_labeled_gold_standard.csv')
+df_labeled.to_csv(labeled_path, index=False)
+
+print(f"Labeled (Gold Standard) data save to {labeled_path}")
