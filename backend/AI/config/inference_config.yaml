@@ -1,0 +1,29 @@
+# ============================================================
+# inference_config.yaml
+# Clinical QA BioBERT Inference Configuration
+# ============================================================
+
+# ── Model ────────────────────────────────────────────────────
+model:
+  checkpoint_dir: "saved_model/biobert_finetuned"  # Relative to backend/AI/
+  num_labels: 3
+  max_len: 512
+
+# ── Label mapping ────────────────────────────────────────────
+# Must match the mapping used during training in data_processor.py
+labels:
+  0: "No"
+  1: "Yes"
+  2: "Maybe"
+
+# ── Inference settings ───────────────────────────────────────
+inference:
+  batch_size: 16         # Rows per batch when running on a CSV file
+  device: "auto"         # "auto" | "cpu" | "cuda"
+  confidence_threshold: 0.0   # Minimum confidence to accept a prediction
+                               # (0.0 = accept all; raise to filter uncertain)
+
+# ── Input / Output (for batch CSV inference) ─────────────────
+batch:
+  input_csv:  "data/labeled/pubmedqa_pseudo_labeled.csv"
+  output_csv: "data/labeled/pubmedqa_inference_results.csv"

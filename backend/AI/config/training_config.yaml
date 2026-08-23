@@ -1,0 +1,30 @@
+# ============================================================
+# training_config.yaml
+# Clinical QA BioBERT Fine-Tuning Configuration
+# ============================================================
+# Edit this file to change training behaviour.
+# run.py loads this config automatically at startup.
+
+# ── Model ────────────────────────────────────────────────────
+model:
+  name: "dmis-lab/biobert-v1.1"    # HuggingFace model identifier
+  num_labels: 3                     # Yes=1 / No=0 / Maybe=2
+  max_len: 512                      # Max token length (BioBERT cap: 512)
+
+# ── Training Hyperparameters ─────────────────────────────────
+training:
+  epochs: 3
+  batch_size: 8
+  learning_rate: 2.0e-5
+  warmup_ratio: 0.1                 # Fraction of steps used for LR warm-up
+  max_grad_norm: 1.0                # Gradient clipping threshold
+
+# ── Data ─────────────────────────────────────────────────────
+data:
+  labeled_csv: "data/labeled/pubmedqa_pseudo_labeled.csv"
+  test_size: 0.2                    # Fraction of data held out for val+test
+  random_state: 42
+
+# ── Output ───────────────────────────────────────────────────
+output:
+  save_dir: "saved_model/biobert_finetuned"   # Relative to backend/AI/
