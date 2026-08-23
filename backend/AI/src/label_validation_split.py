@@ -11,7 +11,7 @@ processed_dir = os.path.join(script_dir, '..', 'data', 'processed')
 os.makedirs(processed_dir, exist_ok=True)
 
 # Load the provided labeled dataset
-labeled_path = os.path.join(labeled_dir, 'pubmedqa_labeled.csv')
+labeled_path = os.path.join(labeled_dir, 'pubmedqa_pseudo_labeled.csv')
 print(f"Loading labeled data from {labeled_path}...")
 df = pd.read_csv(labeled_path)
 
