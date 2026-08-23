@@ -50,7 +50,7 @@ CONCURRENCY  = 30       # parallel Gemini calls
 BATCH_SAVE   = 500      # flush results to disk every N rows
 MAX_RETRIES  = 3        # retries per row before marking as failed
 RETRY_DELAY  = 2.0      # seconds between retries (doubles each attempt)
-FEW_SHOT_PER_LABEL = 3  # number of gold examples per label classmethod
+FEW_SHOT_PER_LABEL = 1  # number of gold examples per label classmethod
 
 SCRIPT_DIR   = Path(__file__).resolve().parent
 DATA_DIR     = SCRIPT_DIR / ".." / ".." / "data"
