@@ -25,5 +25,5 @@ inference:
 
 # ── Input / Output (for batch CSV inference) ─────────────────
 batch:
-  input_csv:  "data/labeled/pubmedqa_pseudo_labeled.csv"
+  input_csv:  "data/labeled/pubmedqa_labeled.csv"
   output_csv: "data/labeled/pubmedqa_inference_results.csv"

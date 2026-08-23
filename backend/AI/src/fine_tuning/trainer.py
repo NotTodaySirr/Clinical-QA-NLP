@@ -62,10 +62,14 @@ class BioBERTTrainer:
         self.optimizer = AdamW(self.model.parameters(), lr=learning_rate)
 
         # ── Class weights (computed from label distribution, NOT from
-        #    iterating the DataLoader — avoids exhausting it) ──────────
-        # Collect labels from the underlying Dataset, not the loader
+        #    iterating the DataLoader — avoids exhausting it or redundant tokenisation)
         dataset = train_loader.dataset
-        all_labels = [int(dataset[i]["labels"]) for i in range(len(dataset))]
+        if hasattr(dataset, "dataframe") and "label_decision" in dataset.dataframe.columns:
+            all_labels = dataset.dataframe["label_decision"].tolist()
+        elif hasattr(dataset, "labels"):
+            all_labels = dataset.labels
+        else:
+            all_labels = [int(dataset[i]["labels"]) for i in range(len(dataset))]
 
         class_weights = compute_class_weight(
             class_weight="balanced",

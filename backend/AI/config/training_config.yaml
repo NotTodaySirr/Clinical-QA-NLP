@@ -21,7 +21,7 @@ training:
 
 # ── Data ─────────────────────────────────────────────────────
 data:
-  labeled_csv: "data/labeled/pubmedqa_pseudo_labeled.csv"
+  labeled_csv: "data/labeled/pubmedqa_labeled.csv"
   test_size: 0.2                    # Fraction of data held out for val+test
   random_state: 42
 
