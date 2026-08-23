@@ -11,15 +11,15 @@ Pipeline
 4. Parse JSON responses into: label_decision, extracted_evidence, confidence.
 5. Append results to the output CSV every BATCH_SAVE rows.
 
-Output columns (7-column schema)
+Output columns (5-column schema)
 ---------------------------------
-  pubid | question | context | label_decision | long_answer | extracted_evidence | confidence
+  pubid | question | context | label_decision | long_answer 
 
 Usage
 -----
   # Set your API key first (one-time):
-  #   set GEMINI_API_KEY=your_key_here      (Windows CMD)
-  #   $env:GEMINI_API_KEY="your_key_here"   (PowerShell)
+  #   set GEMINI_API=your_key_here      (Windows CMD)
+  #   $env:GEMINI_API="your_key_here"   (PowerShell)
 
   python backend/AI/src/label_pipeline/llm_labeler.py
 
@@ -39,11 +39,15 @@ import time
 from pathlib import Path
 
 import pandas as pd
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-# ── Configuration ─────────────────────────────────────────────────────────────
-MODEL        = "gemini-1.5-flash"
+# Load .env 
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+# Configuration
+MODEL        = "gemini-3.1-flash-lite"
 CONCURRENCY  = 30       # parallel Gemini calls
 BATCH_SAVE   = 500      # flush results to disk every N rows
 MAX_RETRIES  = 3        # retries per row before marking as failed
@@ -60,7 +64,7 @@ OUTPUT_COLS = ["pubid", "question", "context", "label_decision", "long_answer"]
 
 VALID_LABELS = {"Yes", "No", "Maybe"}
 
-# ── Prompt template ───────────────────────────────────────────────────────────
+# Prompt template
 PROMPT_TEMPLATE = """\
 You are a clinical NLP expert. Given a biomedical question, its supporting context, \
 and the author's own answer (long_answer), classify the question.
@@ -87,19 +91,15 @@ Respond ONLY with a valid JSON object in this exact format:
 }}
 """
 
-# ── Gemini client ─────────────────────────────────────────────────────────────
+# Gemini client
 def _get_client() -> genai.Client:
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get("GEMINI_API")
     if not api_key:
-        raise EnvironmentError(
-            "GEMINI_API_KEY environment variable is not set.\n"
-            "  PowerShell: $env:GEMINI_API_KEY='your_key_here'\n"
-            "  CMD:        set GEMINI_API_KEY=your_key_here"
-        )
+        raise EnvironmentError("GEMINI_API environment variable is not set.\n")
     return genai.Client(api_key=api_key)
 
 
-# ── JSON parser ───────────────────────────────────────────────────────────────
+# JSON parser
 def _parse_response(text: str) -> dict | None:
     """
     Extract the JSON object from the model's response.
@@ -109,7 +109,7 @@ def _parse_response(text: str) -> dict | None:
     # Strip markdown fences if present
     text = re.sub(r"```(?:json)?", "", text).strip()
 
-    # Try to find the first complete JSON object
+    # Find the first complete JSON object
     match = re.search(r"\{.*?\}", text, re.DOTALL)
     if not match:
         return None
@@ -143,16 +143,15 @@ def _parse_response(text: str) -> dict | None:
     }
 
 
-# ── Single-row labeler ────────────────────────────────────────────────────────
+# Single-row labeler
 async def _label_row(
     client: genai.Client,
     semaphore: asyncio.Semaphore,
     row: dict,
 ) -> dict:
     """
-    Call Gemini for a single row. Returns the row dict enriched with
-    label_decision, extracted_evidence, confidence.
-    On unrecoverable failure, sets label_decision='FAILED'.
+    Call Gemini for a single row. 
+    Returns a labeled row dict with a label_decision.
     """
     prompt = PROMPT_TEMPLATE.format(
         question    = str(row.get("question", "")),
@@ -192,13 +191,11 @@ async def _label_row(
     print(f"  [FAIL] pubid={row.get('pubid')}: marking as FAILED after {MAX_RETRIES} attempts.")
     return {
         **row,
-        "label_decision":     "FAILED",
-        "extracted_evidence": "",
-        "confidence":         0.0,
+        "label_decision":     "FAILED"
     }
 
 
-# ── Batch saver ───────────────────────────────────────────────────────────────
+# Batch saver
 def _save_batch(results: list[dict], output_path: Path, failed_path: Path) -> None:
     """Append a batch of results to the output CSV, separating failed rows."""
     if not results:
@@ -218,14 +215,14 @@ def _save_batch(results: list[dict], output_path: Path, failed_path: Path) -> No
           f"→ {output_path.name}")
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 async def run():
     print(f"Loading cleaned data from:\n  {INPUT_CSV}\n")
     df = pd.read_csv(INPUT_CSV)
     total = len(df)
     print(f"Total rows: {total:,}")
 
-    # ── Resume support: skip already-labelled pubids ──────────────────────────
+    # Resume support: skip already-labelled pubids
     already_done: set[int] = set()
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
@@ -279,7 +276,7 @@ async def run():
         print()
         _save_batch(buffer, OUTPUT_CSV, FAILED_CSV)
 
-    # ── Summary ───────────────────────────────────────────────────────────────
+    # Summary
     elapsed = time.time() - start_time
     print(f"\nDone! {completed:,} rows processed in {elapsed/60:.1f} min.")
     print(f"Output:  {OUTPUT_CSV}")
