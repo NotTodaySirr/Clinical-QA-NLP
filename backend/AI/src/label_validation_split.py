@@ -27,10 +27,7 @@ print(f"Validation Set 1 size: {len(val_set_1)} rows")
 print(f"Validation Set 2 size: {len(val_set_2)} rows")
 
 # Format the columns
-target_columns = [
-    'pubid', 'question', 'context', 'label_decision', 
-    'long_answer', 'extracted_evidence', 'confidence'
-]
+target_columns = ['pubid', 'question', 'context', 'label_decision', 'long_answer']
 
 def format_validation_set(df):
     df_copy = df.copy()

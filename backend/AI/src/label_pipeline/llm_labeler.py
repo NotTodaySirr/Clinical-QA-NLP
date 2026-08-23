@@ -1,34 +1,32 @@
 """
 llm_labeler.py
 ==============
-Pseudo-labels pubmedqa_unlabeled_cleaned.csv using the Gemini Flash API.
+Pseudo-labels pubmedqa_unlabeled_cleaned.csv using the Gemini Flash API
+with few-shot prompting from the gold standard labeled dataset.
 
 Pipeline
 --------
-1. Load the cleaned unlabeled CSV.
-2. Skip rows already labelled (resume support).
-3. Send async batches of requests to Gemini (controlled concurrency).
-4. Parse JSON responses into: label_decision, extracted_evidence, confidence.
-5. Append results to the output CSV every BATCH_SAVE rows.
+1. Load few-shot examples (1 per label) from the gold standard CSV.
+2. Load the cleaned unlabeled CSV.
+3. Skip rows already labelled (resume support).
+4. Send async batches of requests to Gemini (controlled concurrency).
+5. Parse JSON responses into label_decision.
+6. Append results to the output CSV every BATCH_SAVE rows.
 
 Output columns (5-column schema)
 ---------------------------------
-  pubid | question | context | label_decision | long_answer 
+  pubid | question | context | label_decision | long_answer
 
 Usage
 -----
-  # Set your API key first (one-time):
-  #   set GEMINI_API=your_key_here      (Windows CMD)
-  #   $env:GEMINI_API="your_key_here"   (PowerShell)
-
   python backend/AI/src/label_pipeline/llm_labeler.py
 
 Knobs
 -----
-  CONCURRENCY   – parallel Gemini calls at once      (default: 30)
-  BATCH_SAVE    – save to disk every N rows          (default: 500)
-  MODEL         – Gemini model name                  (default: gemini-1.5-flash)
-  MAX_RETRIES   – retries per row on failure         (default: 3)
+  CONCURRENCY   - parallel Gemini calls at once      (default: 30)
+  BATCH_SAVE    - save to disk every N rows          (default: 500)
+  MODEL         - Gemini model name
+  MAX_RETRIES   - retries per row on failure         (default: 3)
 """
 
 import asyncio
@@ -52,23 +50,58 @@ CONCURRENCY  = 30       # parallel Gemini calls
 BATCH_SAVE   = 500      # flush results to disk every N rows
 MAX_RETRIES  = 3        # retries per row before marking as failed
 RETRY_DELAY  = 2.0      # seconds between retries (doubles each attempt)
+FEW_SHOT_PER_LABEL = 3  # number of gold examples per label classmethod
 
 SCRIPT_DIR   = Path(__file__).resolve().parent
 DATA_DIR     = SCRIPT_DIR / ".." / ".." / "data"
 INPUT_CSV    = DATA_DIR / "cleaned"  / "pubmedqa_unlabeled_cleaned.csv"
 OUTPUT_CSV   = DATA_DIR / "labeled"  / "pubmedqa_pseudo_labeled.csv"
 FAILED_CSV   = DATA_DIR / "labeled"  / "pubmedqa_labeling_failed.csv"
+GOLD_CSV     = DATA_DIR / "raw"      / "pubmedqa_labeled_gold_standard.csv"
 
 # Output schema
 OUTPUT_COLS = ["pubid", "question", "context", "label_decision", "long_answer"]
 
 VALID_LABELS = {"Yes", "No", "Maybe"}
 
-# Prompt template
-PROMPT_TEMPLATE = """\
-You are a clinical NLP expert. Given a biomedical question, its supporting context, \
-and the author's own answer (long_answer), classify the question.
+# ── Few-shot example loader ───────────────────────────────────────────────────
+def _load_few_shot_examples(gold_csv: Path, n_per_label: int = 1) -> str:
+    """
+    Loads n_per_label examples per class (Yes/No/Maybe) from the gold standard
+    CSV and formats them as few-shot demonstration blocks for the prompt.
+    """
+    df = pd.read_csv(gold_csv)
+    # Normalise label column to Title-case (gold uses lowercase: yes/no/maybe)
+    df["final_decision"] = df["final_decision"].str.strip().str.capitalize()
 
+    blocks: list[str] = []
+    for label in ["Yes", "No", "Maybe"]:
+        subset = df[df["final_decision"] == label].head(n_per_label)
+        for _, row in subset.iterrows():
+            ctx_preview = str(row["context"])[:600].strip()
+            la_preview  = str(row["long_answer"])[:400].strip()
+            blocks.append(
+                f"Example ({label}):\n"
+                f"  Question   : {str(row['question']).strip()}\n"
+                f"  Context    : {ctx_preview}...\n"
+                f"  Long Answer: {la_preview}...\n"
+                f"  Label      : {label}\n"
+            )
+    return "\n".join(blocks)
+
+
+# Prompt template — few-shot block injected at build time
+_FEW_SHOT_HEADER = """\
+You are a clinical NLP expert that classifies biomedical yes/no/maybe questions.
+
+Below are labeled examples from a verified gold-standard dataset to guide you:
+
+{few_shot_examples}
+---
+Now classify the following NEW entry using the same criteria.
+"""
+
+_TASK_BLOCK = """\
 Question:
 {question}
 
@@ -79,17 +112,15 @@ Author's Answer:
 {long_answer}
 
 Task:
-Based solely on the author's answer, classify the question as:
-  "Yes"   – the answer clearly supports or confirms the question
-  "No"    – the answer clearly contradicts or refutes the question
-  "Maybe" – the answer is uncertain, mixed, or inconclusive
-
+Based on the author's answer, classify the question as:
+  "Yes"   - the answer clearly supports or confirms the question
+  "No"    - the answer clearly contradicts or refutes the question
+  "Maybe" - the answer is uncertain, mixed, or inconclusive
 
 Respond ONLY with a valid JSON object in this exact format:
-{{
-  "label": "Yes" | "No" | "Maybe",
-}}
+{{"label": "Yes" | "No" | "Maybe"}}
 """
+
 
 # Gemini client
 def _get_client() -> genai.Client:
@@ -148,16 +179,18 @@ async def _label_row(
     client: genai.Client,
     semaphore: asyncio.Semaphore,
     row: dict,
+    prompt_header: str,        # pre-built few-shot header (shared across all rows)
 ) -> dict:
     """
-    Call Gemini for a single row. 
+    Call Gemini for a single row using a few-shot prompt.
     Returns a labeled row dict with a label_decision.
     """
-    prompt = PROMPT_TEMPLATE.format(
+    task_block = _TASK_BLOCK.format(
         question    = str(row.get("question", "")),
-        context     = str(row.get("context",  ""))[:2000],   # cap context length
+        context     = str(row.get("context",  ""))[:2000],
         long_answer = str(row.get("long_answer", "")),
     )
+    prompt = prompt_header + task_block
 
     delay = RETRY_DELAY
     async with semaphore:
@@ -245,11 +278,18 @@ async def run():
     client    = _get_client()
     semaphore = asyncio.Semaphore(CONCURRENCY)
 
+    # Build the shared few-shot header once (reused across all rows)
+    print(f"Loading few-shot examples from:\n  {GOLD_CSV}\n")
+    few_shot_examples = _load_few_shot_examples(GOLD_CSV, n_per_label=FEW_SHOT_PER_LABEL)
+    prompt_header     = _FEW_SHOT_HEADER.format(few_shot_examples=few_shot_examples)
+    print(f"Few-shot block ({FEW_SHOT_PER_LABEL} example/label, 3 labels = "
+          f"{FEW_SHOT_PER_LABEL * 3} total examples injected into each prompt)\n")
+
     buffer: list[dict] = []
     start_time = time.time()
     completed  = 0
 
-    tasks = [_label_row(client, semaphore, row) for row in rows_to_label]
+    tasks = [_label_row(client, semaphore, row, prompt_header) for row in rows_to_label]
 
     for coro in asyncio.as_completed(tasks):
         result = await coro
