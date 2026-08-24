@@ -1,0 +1,47 @@
+# ============================================================
+# validation_config.yaml
+# Clinical QA BioBERT Validation / Evaluation Configuration
+# ============================================================
+
+# ── Model ────────────────────────────────────────────────────
+model:
+  checkpoint_dir: "saved_model/biobert_finetuned"   # Relative to backend/AI/
+  num_labels: 3
+  max_len: 512
+
+# ── Label mapping (must match training) ──────────────────────
+labels:
+  0: "No"
+  1: "Yes"
+  2: "Maybe"
+
+# ── Data ─────────────────────────────────────────────────────
+data:
+  labeled_csv:  "data/labeled/pubmedqa_pseudo_labeled.csv"
+  test_size:    0.2          # Must match training split
+  random_state: 42           # Must match training split seed
+
+# ── Evaluation parameters ─────────────────────────────────────
+evaluation:
+  batch_size:            16
+  device:                "auto"        # "auto" | "cpu" | "cuda"
+
+  # F1 averaging strategies to report
+  f1_averaging:
+    - "macro"
+    - "weighted"
+    - "micro"
+
+  # Confidence analysis
+  confidence_bins:       10            # Number of bins for confidence histogram
+  confidence_threshold:  0.7           # Rows below this are flagged as uncertain
+
+  # Error analysis
+  show_misclassified:    true          # Print sample misclassified rows
+  max_misclassified:     10            # How many misclassified samples to show
+
+# ── Output ───────────────────────────────────────────────────
+output:
+  report_dir:   "data/validation"      # Relative to backend/AI/
+  save_report:  true                   # Write metrics to report.json
+  save_predictions: true               # Write full predictions CSV
