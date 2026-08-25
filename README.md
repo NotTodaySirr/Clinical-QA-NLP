@@ -1,6 +1,9 @@
-# Transformer-Based NLP Application
+# Clinical Question Answering System
 
-A full-stack web application for Transformer-based Natural Language Processing, built with **FastAPI** on the backend and **React (Vite + TypeScript)** on the frontend.
+A full-stack web application for **Biomedical & Clinical Question Answering (QA)**, built with **FastAPI** on the backend and **React (Vite + TypeScript)** on the frontend.
+
+The project uses biomedical literature datasets from **PubMed** (PubMedQA) and features a fine-tuned **PubMedBERT** model trained on a **10.5K labeled dataset** (combining pseudo-labeled and gold-standard clinical QA pairs) to deliver accurate clinical reasoning (`Yes` / `No` / `Maybe`), supported by vector-based context retrieval (FAISS) and probability confidence scoring.
+
 
 ---
 
@@ -158,9 +161,12 @@ uv run python backend/AI/src/data_setup.py
 ```json
 {
   "status": "healthy",
-  "app_name": "Transformer NLP API",
-  "version": "0.1.0",
-  "model_loaded": true
+  "app_name": "Clinical Question Answering System",
+  "version": "1.0.0",
+  "model_loaded": true,
+  "retriever_loaded": true,
+  "num_indexed_contexts": 10500,
+  "device": "cuda"
 }
 ```
 
@@ -169,23 +175,31 @@ uv run python backend/AI/src/data_setup.py
 - **Request Body**:
 ```json
 {
-  "text": "Your input text for Transformer NLP processing",
-  "parameters": {}
+  "question": "Does hydroxychloroquine improve survival in hospitalized COVID-19 patients?",
+  "context": null,
+  "top_k": 3
 }
 ```
 - **Response**:
 ```json
 {
-  "task": "Text Classification / Analysis",
-  "prediction": "Positive",
-  "confidence": 0.88,
+  "task": "Clinical Question Answering",
+  "question": "Does hydroxychloroquine improve survival in hospitalized COVID-19 patients?",
+  "prediction": "No",
+  "confidence": 0.94,
   "scores": [
-    { "label": "Positive", "score": 0.88 },
-    { "label": "Neutral", "score": 0.08 },
-    { "label": "Negative", "score": 0.04 }
+    { "label": "Yes", "score": 0.03 },
+    { "label": "No", "score": 0.94 },
+    { "label": "Maybe", "score": 0.03 }
   ],
-  "execution_time_ms": 1.25,
-  "model_version": "transformer-stub-v0.1"
+  "retrieved_context": "Hydroxychloroquine did not result in a significantly lower incidence of death...",
+  "candidates": [],
+  "mode": "retriever_reader",
+  "retrieval_time_ms": 12.4,
+  "inference_time_ms": 45.2,
+  "total_time_ms": 57.6,
+  "device": "cuda",
+  "model_name": "PubMedBERT Fine-Tuned (3-class)"
 }
 ```
 
