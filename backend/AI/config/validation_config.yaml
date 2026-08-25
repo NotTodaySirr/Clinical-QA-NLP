@@ -1,21 +1,19 @@
-# ============================================================
 # validation_config.yaml
 # Clinical QA Unified Validation & Benchmarking Configuration
-# ============================================================
 
-# ── Model Checkpoints ─────────────────────────────────────────
+# Model Checkpoints
 models:
   biobert: "saved_model/biobert_finetuned"
   pubmedbert: "saved_model/pubmedbert_finetuned"
   default: "saved_model/pubmedbert_finetuned"
 
-# ── Label Mapping ─────────────────────────────────────────────
+# Label Mapping
 labels:
   0: "No"
   1: "Yes"
   2: "Maybe"
 
-# ── Datasets ──────────────────────────────────────────────────
+# Datasets
 data:
   # 1. Held-out test split source (stratified split applied automatically)
   labeled_csv: "data/labeled/pubmedqa_labeled.csv"
@@ -25,16 +23,16 @@ data:
   # 2. Official 1,000 Gold Standard Ground Truth (Reasoning-Required)
   gold_standard_csv: "data/raw/pubmedqa_labeled_gold_standard.csv"
 
-# ── Evaluation Parameters ─────────────────────────────────────
+# Evaluation Parameters
 evaluation:
   batch_size: 16
   max_len: 512
-  device: "auto"                    # "auto" | "cpu" | "cuda"
-  confidence_threshold: 0.70        # Flag predictions with confidence < 0.70
-  maybe_threshold: 0.0              # >0 enables threshold calibration (e.g. 0.28)
+  device: "auto" # "auto" | "cpu" | "cuda"
+  confidence_threshold: 0.70 # Flag predictions with confidence < 0.70
+  maybe_threshold: 0.0 # >0 enables threshold calibration (e.g. 0.28)
 
-# ── Output ────────────────────────────────────────────────────
+# Output
 output:
-  base_dir: "data/validation"       # Subfolders will be created per model
+  base_dir: "data/validation" # Subfolders will be created per model
   save_json: true
   save_csv: true

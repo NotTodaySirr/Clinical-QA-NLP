@@ -24,7 +24,7 @@ class BioBERTTrainer:
         device=None,
     ):
         """
-        Step 1: Initialise Transformer Sequence Classification model and tokenizer.
+        Initialise Transformer Sequence Classification model and tokenizer.
 
         Args:
             model_name:  HuggingFace model identifier (e.g., PubMedBERT or BioBERT)
@@ -52,7 +52,7 @@ class BioBERTTrainer:
         self.optimizer = None
         self.scheduler = None
 
-    # ------------------------------------------------------------------
+    
     def setup_training(
         self,
         train_loader,
@@ -63,7 +63,7 @@ class BioBERTTrainer:
         lr_scheduler: str = "cosine",
     ) -> None:
         """
-        Step 2 (Setup): Configure AdamW with weight decay, class-weighted loss, and LR scheduler.
+        Configure AdamW with weight decay, class-weighted loss, and LR scheduler.
 
         Args:
             train_loader:   PyTorch DataLoader for training data
@@ -73,7 +73,7 @@ class BioBERTTrainer:
             warmup_ratio:   Fraction of total steps used for LR warm-up
             lr_scheduler:   LR schedule type ('cosine' or 'linear')
         """
-        # ── Optimiser with weight decay ──────────────────────────────
+        # Optimiser with weight decay
         # Separate parameters for weight decay (exclude bias and LayerNorm weights)
         no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight"]
         optimizer_grouped_parameters = [
@@ -94,8 +94,8 @@ class BioBERTTrainer:
         ]
         self.optimizer = AdamW(optimizer_grouped_parameters, lr=learning_rate)
 
-        # ── Class weights (computed from label distribution, NOT from
-        #    iterating the DataLoader — avoids exhausting it or redundant tokenisation)
+        # Class weights (computed from label distribution, NOT from iterating the DataLoader — avoids exhausting it or redundant tokenisation)
+
         dataset = train_loader.dataset
         if hasattr(dataset, "dataframe") and "label_decision" in dataset.dataframe.columns:
             all_labels = dataset.dataframe["label_decision"].tolist()
@@ -112,7 +112,7 @@ class BioBERTTrainer:
         weights_tensor = torch.tensor(class_weights, dtype=torch.float).to(self.device)
         self.loss_fn = nn.CrossEntropyLoss(weight=weights_tensor)
 
-        # ── LR scheduler with warm-up (Cosine or Linear) ─────────────
+        # LR scheduler with warm-up (Cosine or Linear) 
         total_steps  = len(train_loader) * epochs
         warmup_steps = int(total_steps * warmup_ratio)
 
@@ -137,10 +137,10 @@ class BioBERTTrainer:
             f"  Weight decay  : {weight_decay}"
         )
 
-    # ------------------------------------------------------------------
+
     def train_epoch(self, train_loader, max_grad_norm: float = 1.0) -> float:
         """
-        Step 2 (Execution): Run one full training epoch.
+        Run one full training epoch.
 
         Args:
             train_loader:   DataLoader for training data
@@ -180,10 +180,10 @@ class BioBERTTrainer:
 
         return total_loss / len(train_loader)
 
-    # ------------------------------------------------------------------
+    
     def evaluate(self, val_loader) -> Tuple[float, float, float]:
         """
-        Step 3 (Monitoring): Run the validation loop and compute loss, accuracy, and Macro F1.
+        Run the validation loop and compute loss, accuracy, and Macro F1.
 
         Returns:
             (val_loss, val_accuracy, val_macro_f1) as floats.
@@ -218,7 +218,7 @@ class BioBERTTrainer:
 
         return val_loss, val_acc, val_macro_f1
 
-    # ------------------------------------------------------------------
+    
     def execute_fine_tuning(
         self,
         train_loader,
@@ -230,7 +230,7 @@ class BioBERTTrainer:
         save_dir: str = "saved_model/pubmedbert_finetuned",
     ) -> None:
         """
-        Step 3 (Saving): Full training loop — saves best weights + tokenizer based on highest Val Macro-F1.
+        Full training loop — saves best weights + tokenizer based on highest Val Macro-F1.
 
         Args:
             train_loader:   DataLoader for training data
@@ -283,4 +283,4 @@ class BioBERTTrainer:
 
 
 # Alias for backward compatibility
-PubMedBERTTrainer = BioBERTTrainer
+PubMedBERTTrainer = BioBERTTrainer

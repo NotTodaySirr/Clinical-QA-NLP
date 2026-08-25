@@ -87,7 +87,7 @@ def _header(title: str) -> None:
     print(f"{'=' * 75}")
 
 
-# ── PyTorch Dataset Wrapper ───────────────────────────────────────────────────
+# PyTorch Dataset Wrapper 
 class EvaluationDataset(Dataset):
     def __init__(self, df: pd.DataFrame, tokenizer, max_length: int = 512):
         self.df = df.reset_index(drop=True)
@@ -120,7 +120,7 @@ class EvaluationDataset(Dataset):
         }
 
 
-# ── Data Loaders ──────────────────────────────────────────────────────────────
+# Data Loaders 
 def get_held_out_test_df(cfg: dict) -> pd.DataFrame:
     labeled_csv = AI_DIR / cfg["data"]["labeled_csv"]
     if not labeled_csv.exists():
@@ -159,7 +159,7 @@ def get_gold_standard_df(cfg: dict) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
-# ── Core Inference Routine ────────────────────────────────────────────────────
+# Core Inference Routine 
 def run_dataset_inference(
     model, tokenizer, df: pd.DataFrame, device, batch_size: int = 16, max_len: int = 512, maybe_threshold: float = 0.0
 ) -> Tuple[List[int], List[int], List[float], np.ndarray]:
@@ -200,7 +200,7 @@ def run_dataset_inference(
     return y_true, y_pred, confidences, np.array(all_probs)
 
 
-# ── Metric Computation ────────────────────────────────────────────────────────
+# Metric Computation 
 def calculate_metrics(
     y_true: List[int], y_pred: List[int], confidences: List[float], label_names: List[str], conf_threshold: float = 0.70
 ) -> Dict[str, Any]:
@@ -261,7 +261,7 @@ def print_metric_summary(title: str, metrics: Dict[str, Any], label_names: List[
         print(f"  {lbl:>8}: {cm[i][0]:>10} {cm[i][1]:>10} {cm[i][2]:>10}")
 
 
-# ── Model Evaluator & Exporter ────────────────────────────────────────────────
+# Model Evaluator & Exporter 
 def evaluate_single_model(
     model_name: str,
     checkpoint_dir: Path,
@@ -366,7 +366,7 @@ def evaluate_single_model(
     }
 
 
-# ── Main Entry Point ──────────────────────────────────────────────────────────
+# Main Entry Point 
 def main():
     parser = argparse.ArgumentParser(description="Unified Clinical QA Model Validation & Benchmark")
     parser.add_argument(

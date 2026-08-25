@@ -23,21 +23,19 @@ from pathlib import Path
 
 import yaml
 
-# ── Path setup ────────────────────────────────────────────────────────────────
+# Path setup 
 # run.py lives at: <project>/backend/AI/src/fine_tuning/run.py
 PROJECT_ROOT = Path(__file__).resolve().parents[4]   # …/Clinical-QA-NLP
 AI_DIR       = PROJECT_ROOT / "backend" / "AI"
 SRC_DIR      = AI_DIR / "src"
 CONFIG_PATH  = AI_DIR / "config" / "training_config.yaml"
 
-# Add AI/src so that package-relative imports inside each module resolve:
-#   data_process/data_processor.py  uses  from .data_ingestion import ...
-#   fine_tuning/trainer.py          is    imported as fine_tuning.trainer
+
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from data_process.data_processor import DataProcessor   # noqa: E402
-from fine_tuning.trainer import BioBERTTrainer           # noqa: E402
+from data_process.data_processor import DataProcessor   
+from fine_tuning.trainer import BioBERTTrainer          
 
 
 def load_config(config_path: Path) -> dict:
@@ -53,7 +51,7 @@ def load_config(config_path: Path) -> dict:
     return cfg
 
 
-# ── Step 1: Load & Process Labeled Data ──────────────────────────────────────
+# Load & Process Labeled Data 
 def load_and_process(cfg: dict) -> tuple:
     """
     Load pseudo-labeled CSV, preprocess labels, stratified-split,
@@ -88,7 +86,7 @@ def load_and_process(cfg: dict) -> tuple:
     return train_loader, val_loader, test_loader
 
 
-# ── Step 2: Fine-tune PubMedBERT / BioBERT ───────────────────────────────────
+# Fine-tune PubMedBERT / BioBERT 
 def fine_tune(cfg: dict, train_loader, val_loader) -> None:
     """
     Initialise BioBERTTrainer/PubMedBERTTrainer and run the full fine-tuning loop.
@@ -120,7 +118,7 @@ def fine_tune(cfg: dict, train_loader, val_loader) -> None:
 
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# Entry point 
 if __name__ == "__main__":
     cfg = load_config(CONFIG_PATH)
 

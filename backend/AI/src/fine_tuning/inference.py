@@ -36,7 +36,7 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-# ── Path setup ────────────────────────────────────────────────────────────────
+# Path setup 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]   # …/Clinical-QA-NLP
 AI_DIR       = PROJECT_ROOT / "backend" / "AI"
 SRC_DIR      = AI_DIR / "src"
@@ -45,10 +45,10 @@ CONFIG_PATH  = AI_DIR / "config" / "inference_config.yaml"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from data_process.data_ingestion import clean_context_text  # noqa: E402
+from data_process.data_ingestion import clean_context_text  
 
 
-# ── Config loader ─────────────────────────────────────────────────────────────
+# Config loader 
 def load_config(config_path: Path = CONFIG_PATH) -> dict:
     if not config_path.exists():
         raise FileNotFoundError(f"Inference config not found:\n  {config_path}")
@@ -56,7 +56,7 @@ def load_config(config_path: Path = CONFIG_PATH) -> dict:
         return yaml.safe_load(f)
 
 
-# ── Inference class ───────────────────────────────────────────────────────────
+# Inference class 
 class BioBERTInference:
     """
     Loads the fine-tuned checkpoint and provides predict() for
@@ -66,14 +66,14 @@ class BioBERTInference:
     def __init__(self, config_path: Path = CONFIG_PATH):
         cfg = load_config(config_path)
 
-        # ── Device ────────────────────────────────────────────────────────────
+        # Device 
         device_cfg = cfg["inference"]["device"]
         if device_cfg == "auto":
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             self.device = torch.device(device_cfg)
 
-        # ── Model + tokenizer path resolution (with fallback) ─────────────────
+        #  Model + tokenizer path resolution (with fallback) 
         primary_dir = AI_DIR / cfg["model"]["checkpoint_dir"]
         fallback_dir = AI_DIR / "saved_model" / "biobert_finetuned"
 
@@ -96,14 +96,14 @@ class BioBERTInference:
         self.model.to(self.device)
         self.model.eval()
 
-        # ── Config values ─────────────────────────────────────────────────────
+        # Config values 
         self.max_len         = cfg["model"]["max_len"]
         self.confidence_thr  = cfg["inference"].get("confidence_threshold", 0.0)
         self.maybe_threshold = float(cfg["inference"].get("maybe_threshold", 0.0))
         # Convert YAML int keys {"0": "No", "1": "Yes", "2": "Maybe"} to int
         self.id2label        = {int(k): v for k, v in cfg["labels"].items()}
 
-    # ── Single prediction ─────────────────────────────────────────────────────
+    # Single prediction 
     def predict(self, question: str, context: Any) -> dict:
         """
         Classify a single (question, context) pair.
@@ -159,7 +159,7 @@ class BioBERTInference:
             "scores":     scores,
         }
 
-    # ── Batch inference ───────────────────────────────────────────────────────
+    # Batch inference 
     def predict_batch(self, questions: List[str], contexts: List[Any]) -> List[dict]:
         """
         Classify a batch of (question, context) pairs efficiently.
@@ -211,7 +211,7 @@ class BioBERTInference:
             })
         return results
 
-    # ── CSV batch runner ──────────────────────────────────────────────────────
+    # CSV batch runner 
     def run_on_csv(self, input_csv: Path, output_csv: Path, batch_size: int = 16) -> None:
         """
         Run inference on every row of a CSV file and save results.
@@ -257,7 +257,7 @@ class BioBERTInference:
 PubMedBERTInference = BioBERTInference
 
 
-# ── CLI entry point ───────────────────────────────────────────────────────────
+# CLI entry point 
 if __name__ == "__main__":
     cfg = load_config()
 
