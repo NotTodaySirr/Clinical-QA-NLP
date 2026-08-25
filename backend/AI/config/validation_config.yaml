@@ -1,47 +1,40 @@
 # ============================================================
 # validation_config.yaml
-# Clinical QA BioBERT Validation / Evaluation Configuration
+# Clinical QA Unified Validation & Benchmarking Configuration
 # ============================================================
 
-# ── Model ────────────────────────────────────────────────────
-model:
-  checkpoint_dir: "saved_model/biobert_finetuned"   # Relative to backend/AI/
-  num_labels: 3
-  max_len: 512
+# ── Model Checkpoints ─────────────────────────────────────────
+models:
+  biobert: "saved_model/biobert_finetuned"
+  pubmedbert: "saved_model/pubmedbert_finetuned"
+  default: "saved_model/pubmedbert_finetuned"
 
-# ── Label mapping (must match training) ──────────────────────
+# ── Label Mapping ─────────────────────────────────────────────
 labels:
   0: "No"
   1: "Yes"
   2: "Maybe"
 
-# ── Data ─────────────────────────────────────────────────────
+# ── Datasets ──────────────────────────────────────────────────
 data:
-  labeled_csv:  "data/labeled/pubmedqa_pseudo_labeled.csv"
-  test_size:    0.2          # Must match training split
-  random_state: 42           # Must match training split seed
+  # 1. Held-out test split source (stratified split applied automatically)
+  labeled_csv: "data/labeled/pubmedqa_labeled.csv"
+  test_size: 0.2
+  random_state: 42
 
-# ── Evaluation parameters ─────────────────────────────────────
+  # 2. Official 1,000 Gold Standard Ground Truth (Reasoning-Required)
+  gold_standard_csv: "data/raw/pubmedqa_labeled_gold_standard.csv"
+
+# ── Evaluation Parameters ─────────────────────────────────────
 evaluation:
-  batch_size:            16
-  device:                "auto"        # "auto" | "cpu" | "cuda"
+  batch_size: 16
+  max_len: 512
+  device: "auto"                    # "auto" | "cpu" | "cuda"
+  confidence_threshold: 0.70        # Flag predictions with confidence < 0.70
+  maybe_threshold: 0.0              # >0 enables threshold calibration (e.g. 0.28)
 
-  # F1 averaging strategies to report
-  f1_averaging:
-    - "macro"
-    - "weighted"
-    - "micro"
-
-  # Confidence analysis
-  confidence_bins:       10            # Number of bins for confidence histogram
-  confidence_threshold:  0.7           # Rows below this are flagged as uncertain
-
-  # Error analysis
-  show_misclassified:    true          # Print sample misclassified rows
-  max_misclassified:     10            # How many misclassified samples to show
-
-# ── Output ───────────────────────────────────────────────────
+# ── Output ────────────────────────────────────────────────────
 output:
-  report_dir:   "data/validation"      # Relative to backend/AI/
-  save_report:  true                   # Write metrics to report.json
-  save_predictions: true               # Write full predictions CSV
+  base_dir: "data/validation"       # Subfolders will be created per model
+  save_json: true
+  save_csv: true

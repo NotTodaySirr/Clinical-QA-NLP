@@ -88,32 +88,36 @@ def load_and_process(cfg: dict) -> tuple:
     return train_loader, val_loader, test_loader
 
 
-# ── Step 2: Fine-tune BioBERT ─────────────────────────────────────────────────
+# ── Step 2: Fine-tune PubMedBERT / BioBERT ───────────────────────────────────
 def fine_tune(cfg: dict, train_loader, val_loader) -> None:
     """
-    Initialise BioBERTTrainer and run the full fine-tuning loop.
+    Initialise BioBERTTrainer/PubMedBERTTrainer and run the full fine-tuning loop.
     Best model checkpoint + tokenizer are saved to output.save_dir.
     """
+    model_name = cfg["model"]["name"]
     print("\n" + "=" * 60)
-    print("Fine-tuning BioBERT")
+    print(f"Fine-tuning Transformer Model ({model_name})")
     print("=" * 60)
 
     save_dir = str(AI_DIR / cfg["output"]["save_dir"])
     os.makedirs(save_dir, exist_ok=True)
 
     trainer = BioBERTTrainer(
-        model_name=cfg["model"]["name"],
+        model_name=model_name,
         num_labels=cfg["model"]["num_labels"],
     )
     trainer.execute_fine_tuning(
         train_loader=train_loader,
         val_loader=val_loader,
         epochs=cfg["training"]["epochs"],
-        learning_rate=cfg["training"]["learning_rate"],
+        learning_rate=float(cfg["training"]["learning_rate"]),
+        weight_decay=float(cfg["training"].get("weight_decay", 0.01)),
+        lr_scheduler=cfg["training"].get("lr_scheduler", "cosine"),
         save_dir=save_dir,
     )
 
     return save_dir
+
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

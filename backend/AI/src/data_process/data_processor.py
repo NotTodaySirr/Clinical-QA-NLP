@@ -5,8 +5,8 @@ from torch.utils.data import DataLoader
 
 from .data_ingestion import MedicalQADataset
 
-# BioBERT tokeniser
-model_name = 'dmis-lab/biobert-v1.1'
+# Default tokeniser
+model_name = 'microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext'
 
 class DataProcessor:
     """

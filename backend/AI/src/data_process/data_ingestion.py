@@ -1,5 +1,55 @@
+import ast
+import re
+from typing import Any
 import torch
 from torch.utils.data import Dataset
+
+
+def clean_context_text(raw_context: Any) -> str:
+    """
+    Cleans raw context string (which might be a stringified python dictionary or JSON)
+    into a coherent, structured medical text: 'SECTION: Sentence. SECTION: Sentence.'
+    Prevents token budget waste on JSON/dict keys and ensures crucial findings fit within
+    the token budget.
+    """
+    if raw_context is None:
+        return ""
+    if not isinstance(raw_context, str):
+        if isinstance(raw_context, dict):
+            contexts = raw_context.get("contexts", [])
+            labels = raw_context.get("labels", [])
+            if contexts and labels and len(contexts) == len(labels):
+                sections = [
+                    f"{str(lbl).strip().upper()}: {str(txt).strip()}"
+                    for lbl, txt in zip(labels, contexts)
+                    if str(txt).strip()
+                ]
+                return " ".join(sections)
+            elif contexts:
+                return " ".join([str(c).strip() for c in contexts if str(c).strip()])
+        return str(raw_context).strip()
+
+    raw_context = raw_context.strip()
+    if raw_context.startswith("{") and ("contexts" in raw_context or "labels" in raw_context):
+        try:
+            parsed = ast.literal_eval(raw_context)
+            if isinstance(parsed, dict):
+                contexts = parsed.get("contexts", [])
+                labels = parsed.get("labels", [])
+                if contexts and labels and len(contexts) == len(labels):
+                    sections = [
+                        f"{str(lbl).strip().upper()}: {str(txt).strip()}"
+                        for lbl, txt in zip(labels, contexts)
+                        if str(txt).strip()
+                    ]
+                    return " ".join(sections)
+                elif contexts:
+                    return " ".join([str(c).strip() for c in contexts if str(c).strip()])
+        except Exception:
+            pass
+
+    return re.sub(r"\s+", " ", raw_context).strip()
+
 
 class MedicalQADataset(Dataset):
     """
@@ -34,15 +84,17 @@ class MedicalQADataset(Dataset):
             Description: Get the item at the given index
             Process:
                 1. Get the question, context, and label
-                2. Tokenise the question and context
-                3. Return the tokenised data
+                2. Clean the context string into structured medical text
+                3. Tokenise the question and context
+                4. Return the tokenised data
             Input:
                 idx: Index of the item
             Output:
                 Tokenised data
         """
         question = str(self.dataframe.loc[idx, 'question'])
-        context = str(self.dataframe.loc[idx, 'context'])
+        raw_context = self.dataframe.loc[idx, 'context']
+        context = clean_context_text(raw_context)
         label = self.dataframe.loc[idx, 'label_decision']
 
         # Sequence pairing, padding, and truncation
@@ -59,4 +111,4 @@ class MedicalQADataset(Dataset):
             'input_ids': encoding['input_ids'].flatten(),
             'attention_mask': encoding['attention_mask'].flatten(),
             'labels': torch.tensor(label, dtype=torch.long)
-        }
+        }
