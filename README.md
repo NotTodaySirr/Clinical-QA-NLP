@@ -49,15 +49,15 @@ You can run the backend using either **`uv`** (recommended) or traditional **`pi
 # Navigate to backend directory
 cd backend
 
-# Create virtual environment and install dependencies
-uv venv
-uv pip install -r requirements.txt
+# Sync dependencies (creates venv and installs everything automatically)
+uv sync
 
-# Run the development server
-uv run uvicorn app.main:app --reload --port 8000
+# Run the backend server
+uv run main.py
 ```
 
-> **Note**: You can also use `uv sync` if managing dependencies via `pyproject.toml`.
+> **Note**: You can also run with live-reload using `uv run uvicorn app.main:app --reload --port 8000`.
+
 
 #### Option B: Using standard `pip`
 
