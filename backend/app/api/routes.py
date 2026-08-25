@@ -5,25 +5,36 @@ from app.core.config import settings
 
 router = APIRouter()
 
-@router.get("/health", response_model=HealthResponse, summary="Health Check")
+
+@router.get("/health", response_model=HealthResponse, summary="Clinical QA Health Check")
 async def health_check():
     return HealthResponse(
-        status="healthy",
+        status="healthy" if model_service.is_ready else "initializing",
         app_name=settings.PROJECT_NAME,
-        version="0.1.0",
-        model_loaded=model_service.is_ready
+        version="1.0.0",
+        model_loaded=model_service.is_ready and model_service.model is not None,
+        retriever_loaded=model_service.faiss_index is not None,
+        num_indexed_contexts=len(model_service.contexts),
+        device=model_service.device,
     )
 
-@router.post("/predict", response_model=PredictionResponse, summary="Run NLP Inference")
+
+@router.post("/predict", response_model=PredictionResponse, summary="Execute Clinical QA Reasoning")
 async def run_prediction(request: PredictionRequest):
+    if not model_service.is_ready:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Model is still initializing or not ready.",
+        )
     try:
         response = model_service.predict(
-            text=request.text,
-            parameters=request.parameters
+            question=request.question,
+            context=request.context,
+            top_k=request.top_k,
         )
         return response
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Inference execution failed: {str(e)}"
+            detail=f"Clinical inference failed: {str(e)}",
         )
