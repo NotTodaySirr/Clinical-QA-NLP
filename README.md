@@ -76,7 +76,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # Run the development server
-uvicorn app.main:app --reload --port 8000
+python main.py
 ```
 
 The API will be live at:
@@ -183,7 +183,7 @@ python backend/AI/src/data_process/build_faiss_index.py
 Now that the data and knowledge base are ready, start the FastAPI server to load the AI models.
 ```bash
 cd backend
-uvicorn app.main:app --reload --port 8000
+python main.py
 ```
 The API is now live at `http://localhost:8000`.
 
