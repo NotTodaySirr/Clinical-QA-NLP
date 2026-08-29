@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     FAISS_INDEX_PATH: str = str(BASE_DIR / "AI" / "saved_model" / "faiss_medical.index")
     CONTEXTS_PATH: str = str(BASE_DIR / "AI" / "saved_model" / "contexts.npy")
     METADATA_PATH: str = str(BASE_DIR / "AI" / "saved_model" / "contexts_meta.npy")
-    EMBEDDER_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+    EMBEDDER_MODEL: str = "pritamdeka/S-PubMedBert-MS-MARCO"
     
     # Classification labels (Index 0: No, Index 1: Yes, Index 2: Maybe)
     ID2LABEL: dict = {0: "No", 1: "Yes", 2: "Maybe"}

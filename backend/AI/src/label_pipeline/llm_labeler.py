@@ -55,7 +55,7 @@ FEW_SHOT_PER_LABEL = 1  # number of gold examples per label classmethod
 SCRIPT_DIR   = Path(__file__).resolve().parent
 DATA_DIR     = SCRIPT_DIR / ".." / ".." / "data"
 INPUT_CSV    = DATA_DIR / "cleaned"  / "pubmedqa_unlabeled_cleaned.csv"
-OUTPUT_CSV   = DATA_DIR / "labeled"  / "pubmedqa_pseudo_labeled.csv"
+OUTPUT_CSV   = DATA_DIR / "labeled"  / "pubmedqa_labeled.csv"
 FAILED_CSV   = DATA_DIR / "labeled"  / "pubmedqa_labeling_failed.csv"
 GOLD_CSV     = DATA_DIR / "raw"      / "pubmedqa_labeled_gold_standard.csv"
 

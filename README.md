@@ -4,7 +4,6 @@ A full-stack web application for **Biomedical & Clinical Question Answering (QA)
 
 The project uses biomedical literature datasets from **PubMed** (PubMedQA) and features a fine-tuned **PubMedBERT** model trained on a **10.5K labeled dataset** (combining pseudo-labeled and gold-standard clinical QA pairs) to deliver accurate clinical reasoning (`Yes` / `No` / `Maybe`), supported by vector-based context retrieval (FAISS) and probability confidence scoring.
 
-
 ---
 
 ## 📁 Project Structure
@@ -58,7 +57,6 @@ uv run main.py
 
 > **Note**: You can also run with live-reload using `uv run uvicorn app.main:app --reload --port 8000`.
 
-
 #### Option B: Using standard `pip`
 
 ```bash
@@ -82,6 +80,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 The API will be live at:
+
 - **API Base**: `http://localhost:8000`
 - **Interactive Swagger Docs**: `http://localhost:8000/docs`
 - **Health Check**: `http://localhost:8000/api/v1/health`
@@ -125,6 +124,7 @@ The web application will be accessible at `http://localhost:5173`.
 ### 3. Dataset Setup
 
 #### Option A: Pull via DVC & DagsHub (Recommended)
+
 ```bash
 # Install root dependencies (includes DVC and ML tools)
 # Using uv:
@@ -142,6 +142,7 @@ dvc pull -r origin
 ```
 
 #### Option B: Fetch raw dataset directly via Python script
+
 ```bash
 # Using uv:
 uv run python backend/AI/src/data_setup.py
@@ -150,14 +151,60 @@ uv run python backend/AI/src/data_setup.py
 # python backend/AI/src/data_setup.py
 ```
 
+---
+
+## 🎓 Full Pipeline Tutorial (Data to Web App)
+
+If you are setting up the project for the very first time, follow these steps in chronological order to ensure all data and models are ready before starting the web application.
+
+### Step 1: Fetch the Dataset
+Before starting the backend, you must have the clinical dataset.
+```bash
+# Create and activate your virtual environment
+python -m venv .venv
+.venv\Scripts\activate   # For Windows
+# source .venv/bin/activate # For Linux/macOS
+
+# Install backend dependencies
+pip install -r backend/requirements.txt
+
+# Run the data setup script to download PubMedQA
+python backend/AI/src/data_setup/data_setup.py
+```
+
+### Step 2: Build the FAISS Knowledge Base
+Convert the medical abstracts into searchable vectors using our retriever model (`S-PubMedBert-MS-MARCO`). The backend API needs this index to answer open-domain questions.
+```bash
+python backend/AI/src/data_process/build_faiss_index.py
+```
+*(This will generate `faiss_medical.index` and context files in the `backend/AI/saved_model` folder).*
+
+### Step 3: Start the Backend API
+Now that the data and knowledge base are ready, start the FastAPI server to load the AI models.
+```bash
+cd backend
+uvicorn app.main:app --reload --port 8000
+```
+The API is now live at `http://localhost:8000`.
+
+### Step 4: Start the Frontend Web App
+Finally, open a **new terminal window** to start the React interface so you can interact with the system.
+```bash
+cd frontend
+npm install
+npm run dev
+```
+The web application is now accessible at `http://localhost:5173`!
 
 ---
 
 ## 📡 API Reference
 
 ### Health Check
+
 - **Endpoint**: `GET /api/v1/health`
 - **Response**:
+
 ```json
 {
   "status": "healthy",
@@ -171,8 +218,10 @@ uv run python backend/AI/src/data_setup.py
 ```
 
 ### Run Model Inference
+
 - **Endpoint**: `POST /api/v1/predict`
 - **Request Body**:
+
 ```json
 {
   "question": "Does hydroxychloroquine improve survival in hospitalized COVID-19 patients?",
@@ -180,7 +229,9 @@ uv run python backend/AI/src/data_setup.py
   "top_k": 3
 }
 ```
+
 - **Response**:
+
 ```json
 {
   "task": "Clinical Question Answering",

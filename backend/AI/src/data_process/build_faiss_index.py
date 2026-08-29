@@ -63,7 +63,7 @@ def clean_context_text(raw_context: Any) -> str:
 def build_faiss_index(
     csv_path: str = "backend/AI/data/labeled/pubmedqa_labeled.csv",
     output_dir: str = "backend/AI/saved_model",
-    embedder_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+    embedder_model: str = "pritamdeka/S-PubMedBert-MS-MARCO",
     batch_size: int = 256,
 ):
     print("=" * 60)
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build FAISS Knowledge Base for PubMedQA")
     parser.add_argument("--csv_path", type=str, default="backend/AI/data/labeled/pubmedqa_labeled.csv")
     parser.add_argument("--output_dir", type=str, default="backend/AI/saved_model")
-    parser.add_argument("--embedder", type=str, default="sentence-transformers/all-MiniLM-L6-v2")
+    parser.add_argument("--embedder", type=str, default="pritamdeka/S-PubMedBert-MS-MARCO")
     parser.add_argument("--batch_size", type=int, default=256)
     args = parser.parse_args()
 
