@@ -37,28 +37,29 @@ const CLINICAL_PRESETS: ClinicalPreset[] = [
   {
     tag: "yes",
     tagLabel: "YES",
-    title: "Aspirin in Acute Myocardial Infarction",
-    question: "Is aspirin effective for acute myocardial infarction?",
+    title: "Defibrillator Implantation under Sedation",
+    question: "Can we implant cardioverter defibrillator under minimal sedation?",
   },
   {
     tag: "no",
     tagLabel: "NO",
-    title: "Hydroxychloroquine in Hospitalized COVID-19",
-    question: "Does hydroxychloroquine improve survival in hospitalized COVID-19 patients?",
+    title: "Clinical Relevance of Thyroid Stunning",
+    question: "Is thyroid stunning clinically relevant?",
   },
   {
     tag: "maybe",
     tagLabel: "MAYBE",
-    title: "Dietary Sodium Restriction in Stage 3 CKD",
-    question: "Is dietary sodium restriction effective in preventing progression of stage 3 chronic kidney disease?",
+    title: "Workplace Health & Job Stress",
+    question: "Does workplace health promotion contribute to job stress reduction?",
   },
   {
     tag: "yes",
     tagLabel: "YES",
-    title: "Metformin in Type 2 Diabetes Mortality",
-    question: "Does metformin reduce cardiovascular mortality in patients with type 2 diabetes?",
+    title: "Pediatric vs Adult Disaster Victims",
+    question: "Do pediatric and adult disaster victims differ?",
   },
 ];
+
 
 const LOCAL_STORAGE_KEY = "clinical_qa_session_history_v1";
 

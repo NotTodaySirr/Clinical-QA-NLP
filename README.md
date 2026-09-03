@@ -40,31 +40,39 @@ The project uses biomedical literature datasets from **PubMed** (PubMedQA) and f
 
 ### 1. Backend Setup
 
-You can run the backend using either **`uv`** (recommended) or traditional **`pip`**:
+You can set up and run the backend using either **`uv`** (recommended) or traditional **`pip`**.
+
+> **Important**: The backend requires the FAISS knowledge base (`faiss_medical.index`) to answer open-domain queries. If you haven't pulled the data/models via DVC yet, make sure to generate the FAISS index before starting the server.
 
 #### Option A: Using `uv` (Recommended - Fastest)
 
 ```bash
-# Navigate to backend directory
+# 1. Navigate to backend directory
 cd backend
 
-# Sync dependencies (creates venv and installs everything automatically)
+# 2. Sync dependencies (automatically creates .venv and installs packages)
 uv sync
 
-# Run the backend server
+# 3. Build FAISS Knowledge Base (Required for Open-Domain QA if not pulled via DVC)
+uv run AI/src/data_process/build_faiss_index.py --csv_path AI/data/labeled/pubmedqa_labeled.csv --output_dir AI/saved_model
+
+# 4. Run the backend server
 uv run main.py
 ```
 
-> **Note**: You can also run with live-reload using `uv run uvicorn app.main:app --reload --port 8000`.
+> **Tip**: For auto-reloading during development, run:
+> ```bash
+> uv run uvicorn app.main:app --reload --port 8000
+> ```
 
 #### Option B: Using standard `pip`
 
 ```bash
-# Navigate to backend directory
+# 1. Navigate to backend directory
 cd backend
 
-# Create and activate virtual environment
-# Windows:
+# 2. Create and activate virtual environment
+# Windows (PowerShell/CMD):
 python -m venv .venv
 .venv\Scripts\activate
 
@@ -72,10 +80,13 @@ python -m venv .venv
 # python3 -m venv .venv
 # source .venv/bin/activate
 
-# Install dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# Run the development server
+# 4. Build FAISS Knowledge Base (Required for Open-Domain QA if not pulled via DVC)
+python AI/src/data_process/build_faiss_index.py --csv_path AI/data/labeled/pubmedqa_labeled.csv --output_dir AI/saved_model
+
+# 5. Run the development server
 python main.py
 ```
 
@@ -125,6 +136,8 @@ The web application will be accessible at `http://localhost:5173`.
 
 #### Option A: Pull via DVC & DagsHub (Recommended)
 
+From the project root:
+
 ```bash
 # Install root dependencies (includes DVC and ML tools)
 # Using uv:
@@ -137,18 +150,20 @@ dvc remote modify origin --local auth basic
 dvc remote modify origin --local user "YOUR_DAGSHUB_USERNAME"
 dvc remote modify origin --local password "YOUR_DAGSHUB_TOKEN"
 
-# Pull data tracked by DVC
+# Pull data and models tracked by DVC
 dvc pull -r origin
 ```
 
 #### Option B: Fetch raw dataset directly via Python script
 
+From the project root:
+
 ```bash
 # Using uv:
-uv run python backend/AI/src/data_setup.py
+uv run python backend/AI/src/data_setup/data_setup.py
 
 # Or using standard python:
-# python backend/AI/src/data_setup.py
+# python backend/AI/src/data_setup/data_setup.py
 ```
 
 ---
@@ -158,42 +173,75 @@ uv run python backend/AI/src/data_setup.py
 If you are setting up the project for the very first time, follow these steps in chronological order to ensure all data and models are ready before starting the web application.
 
 ### Step 1: Fetch the Dataset
-Before starting the backend, you must have the clinical dataset.
-```bash
-# Create and activate your virtual environment
-python -m venv .venv
-.venv\Scripts\activate   # For Windows
-# source .venv/bin/activate # For Linux/macOS
+Before starting the backend, make sure you have the clinical dataset (`backend/AI/data/labeled/pubmedqa_labeled.csv`).
 
-# Install backend dependencies
-pip install -r backend/requirements.txt
+* **Using `uv`:**
+  ```bash
+  cd backend
+  uv sync
+  uv run AI/src/data_setup/data_setup.py
+  ```
 
-# Run the data setup script to download PubMedQA
-python backend/AI/src/data_setup/data_setup.py
-```
+* **Using standard `pip`:**
+  ```bash
+  cd backend
+  python -m venv .venv
+  .venv\Scripts\activate    # For Windows
+  # source .venv/bin/activate  # For Linux/macOS
+  pip install -r requirements.txt
+  python AI/src/data_setup/data_setup.py
+  ```
 
 ### Step 2: Build the FAISS Knowledge Base
 Convert the medical abstracts into searchable vectors using our retriever model (`S-PubMedBert-MS-MARCO`). The backend API needs this index to answer open-domain questions.
-```bash
-python backend/AI/src/data_process/build_faiss_index.py
-```
-*(This will generate `faiss_medical.index` and context files in the `backend/AI/saved_model` folder).*
+
+* **Using `uv`:**
+  ```bash
+  cd backend
+  uv run AI/src/data_process/build_faiss_index.py --csv_path AI/data/labeled/pubmedqa_labeled.csv --output_dir AI/saved_model
+  ```
+
+* **Using standard `pip`:**
+  ```bash
+  cd backend
+  # Ensure your .venv is activated
+  python AI/src/data_process/build_faiss_index.py --csv_path AI/data/labeled/pubmedqa_labeled.csv --output_dir AI/saved_model
+  ```
+*(This generates `faiss_medical.index`, `contexts.npy`, and `contexts_meta.npy` in `backend/AI/saved_model/`).*
 
 ### Step 3: Start the Backend API
 Now that the data and knowledge base are ready, start the FastAPI server to load the AI models.
-```bash
-cd backend
-python main.py
-```
+
+* **Using `uv`:**
+  ```bash
+  cd backend
+  uv run main.py
+  ```
+
+* **Using standard `pip`:**
+  ```bash
+  cd backend
+  # Ensure your .venv is activated
+  python main.py
+  ```
 The API is now live at `http://localhost:8000`.
 
 ### Step 4: Start the Frontend Web App
-Finally, open a **new terminal window** to start the React interface so you can interact with the system.
-```bash
-cd frontend
-npm install
-npm run dev
-```
+Open a **new terminal window** to start the React interface so you can interact with the system.
+
+* **Using `pnpm` (Recommended):**
+  ```bash
+  cd frontend
+  pnpm install
+  pnpm dev
+  ```
+
+* **Using standard `npm`:**
+  ```bash
+  cd frontend
+  npm install
+  npm run dev
+  ```
 The web application is now accessible at `http://localhost:5173`!
 
 ---

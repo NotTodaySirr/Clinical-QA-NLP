@@ -72,7 +72,23 @@ def build_faiss_index(
     start_time = time.time()
 
     if not os.path.exists(csv_path):
-        raise FileNotFoundError(f"Source dataset not found at: {csv_path}")
+        # Auto-detect path if executed from backend/ instead of root or vice versa
+        candidates = [
+            csv_path.replace("backend/", ""),
+            os.path.join("backend", csv_path),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "labeled", "pubmedqa_labeled.csv"),
+        ]
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                csv_path = candidate
+                break
+        else:
+            raise FileNotFoundError(f"Source dataset not found at: {csv_path}")
+
+    if not os.path.exists(output_dir):
+        alt_out = output_dir.replace("backend/", "") if output_dir.startswith("backend/") else os.path.join("backend", output_dir)
+        if os.path.exists(os.path.dirname(alt_out)) or os.path.exists(alt_out):
+            output_dir = alt_out
 
     os.makedirs(output_dir, exist_ok=True)
     index_output_path = os.path.join(output_dir, "faiss_medical.index")
